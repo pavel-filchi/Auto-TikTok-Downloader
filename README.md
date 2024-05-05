@@ -1,6 +1,6 @@
 # TikTok Video Downloader
 
-![Where is Network located](images/ex.png)
+![Where is Network located](images/ex.jpg)
 
 A Python module for automatically downloading TikTok videos.
 
