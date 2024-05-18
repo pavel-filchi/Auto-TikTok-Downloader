@@ -1,6 +1,6 @@
 # TikTok Video Downloader
 
-![Where is Network located](images/ex.jpg)
+![Image Example](images/ex.jpg)
 
 A Python module for automatically downloading TikTok videos.
 
@@ -32,6 +32,10 @@ A Python module for automatically downloading TikTok videos.
 
 1. Run your Python script.
 2. The videos from the specified TikTok channel should be downloaded to your local directory.
+### NEW : GUI Update
+
+- You can now directly add your classname and the link of the tiktok channel directly to the app!:
+  ![App look](images/ex3.png)
 
 ## Example
 
