@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import messagebox
 import configparser
 
-stop_download = False  # Global variable to control the stopping of the download process
+stop_download = False  
 
 def exitProgram():
     if messagebox.askokcancel("Exit", "Are you sure you want to exit?"):
@@ -68,7 +68,7 @@ def downloadVideo(link, id):
 # Function to start the download process
 def startDownload():
     global stop_download
-    stop_download = False  # Reset stop_download flag at the beginning of the download
+    stop_download = False  
     channel_link = entry_channel_link.get()
     class_name = entry_class_name.get()
 
