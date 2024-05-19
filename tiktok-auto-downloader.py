@@ -7,23 +7,32 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import os
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox, scrolledtext
 import configparser
+import webbrowser
 
-stop_download = False  
+stop_download = False
 
 def exitProgram():
     if messagebox.askokcancel("Exit", "Are you sure you want to exit?"):
         root.destroy()
-def log_message(message):
-    log_text.insert(tk.END, message + "\n")
+
+def log_message(message, color=None):
+    log_text.config(state=tk.NORMAL)
+    if color:
+        log_text.insert(tk.END, message + "\n", color)
+        log_text.tag_configure(color, foreground=color)
+    else:
+        log_text.insert(tk.END, message + "\n")
     log_text.see(tk.END)
+    log_text.config(state=tk.DISABLED)
 
 def downloadVideo(link, id):
     global stop_download
     if stop_download:
         return
-    print(f"Downloading video {id} from: {link}")
+    log_message(f"Downloading video {id} from: {link}", "cyan")
+
     cookies = {
       # read the README file to understand how to get the cookies
     }
@@ -41,16 +50,15 @@ def downloadVideo(link, id):
         #read the README file to understand how to get the data
     }
 
-    log_message("Getting the download link")
+    log_message("Getting the download link", "cyan")
     response = requests.post('https://ssstik.io/abc', params=params, cookies=cookies, headers=headers, data=data)
     downloadSoup = BeautifulSoup(response.text, "html.parser")
 
     downloadLink = downloadSoup.a["href"]
     videoTitle = downloadSoup.p.getText().strip()
 
-    log_message("Saving the video in the folder")
+    log_message("Saving the video in the folder", "cyan")
     mp4File = urlopen(downloadLink)
-    # Check if the directory exists, if not, create it
     video_directory = "video"
     if not os.path.exists(video_directory):
         os.makedirs(video_directory)
@@ -64,16 +72,33 @@ def downloadVideo(link, id):
             else:
                 break
 
+    log_message(f"Video {id} downloaded successfully", "green")
 
-# Function to start the download process
 def startDownload():
     global stop_download
-    stop_download = False  
+    stop_download = False
     channel_link = entry_channel_link.get()
     class_name = entry_class_name.get()
+    num_videos = entry_num_videos.get()
+    if not num_videos:
+        log_message("Number of Videos can't be null", "red")
+        return
+
+    if num_videos.upper() == 'ALL':
+        log_message("Downloading all found videos...", "green")
+        return
+
+    try:
+        num_videos = int(num_videos)
+        if num_videos <= 0:
+            raise ValueError
+    except ValueError:
+        log_message("Number of Videos must be a positive number ", "red")
+        return
+
 
     def download_thread():
-        log_message("Opening the Chrome browser")
+        log_message("Opening the Chrome browser", "cyan")
         options = Options()
         options.add_argument("start-maximized")
         options.add_argument("--disable-blink-features=AutomationControlled")
@@ -84,7 +109,7 @@ def startDownload():
         remaining_time = 30
 
         while remaining_time > 0:
-            log_message(f"Waiting for {remaining_time} seconds...")
+            log_message(f"Waiting for {remaining_time} seconds...", "cyan")
             time.sleep(1)
             remaining_time -= 1
 
@@ -92,7 +117,7 @@ def startDownload():
         screen_height = driver.execute_script("return window.screen.height;")
         i = 1
 
-        log_message("Scrolling page to get all the videos...")
+        log_message("Scrolling page to get all the videos...", "cyan")
 
         while True:
             if stop_download:
@@ -113,11 +138,11 @@ def startDownload():
 
         urlsToDownload = driver.execute_script(script)
 
-        log_message(f" {len(urlsToDownload)} Videos found")
+        log_message(f"{len(urlsToDownload)} Videos found", "green")
         for index, url in enumerate(urlsToDownload):
-            if stop_download:
+            if stop_download or index >= num_videos:
                 break
-            log_message(f"Downloading video: {index}")
+            log_message(f"Downloading video: {index + 1}/{num_videos}", "cyan")
             downloadVideo(url, index)
             time.sleep(10)
 
@@ -126,12 +151,10 @@ def startDownload():
     thread = threading.Thread(target=download_thread)
     thread.start()
 
-
 def stopDownload():
     global stop_download
     stop_download = True
-    log_message("Download stopped")
-
+    log_message("Download stopped", "red")
 
 def saveConfig():
     config = configparser.ConfigParser()
@@ -143,7 +166,6 @@ def saveConfig():
         config.write(configfile)
     messagebox.showinfo("Info", "Configuration saved successfully!")
 
-
 def loadConfig():
     config = configparser.ConfigParser()
     if os.path.exists('config.ini'):
@@ -151,33 +173,72 @@ def loadConfig():
         entry_channel_link.insert(0, config['DEFAULT'].get('channel_link', ''))
         entry_class_name.insert(0, config['DEFAULT'].get('class_name', ''))
 
+def open_github_link(event):
+    webbrowser.open_new("https://github.com/pavel-filchi/Auto-TikTok-Downloader")
+
 
 root = tk.Tk()
 root.title("TikTok Video Downloader")
+root.geometry("700x500")
 
-tk.Label(root, text="Channel Link:").grid(row=0, column=0, sticky=tk.W)
-entry_channel_link = tk.Entry(root, width=50)
-entry_channel_link.grid(row=0, column=1, padx=10, pady=5)
+icon_path = 'logo.png'
+if os.path.exists(icon_path):
+    root.iconphoto(False, tk.PhotoImage(file=icon_path))
 
-tk.Label(root, text="Class Name:").grid(row=1, column=0, sticky=tk.W)
-entry_class_name = tk.Entry(root, width=50)
-entry_class_name.grid(row=1, column=1, padx=10, pady=5)
+style = ttk.Style(root)
+style.theme_use('clam')
 
-log_text = tk.Text(root, height=20, width=80)
-log_text.grid(row=2, column=0, columnspan=3, padx=10, pady=10)
-log_text.tag_configure("red", foreground="red")
+style.configure('TFrame', background='black')
+style.configure('TLabel', background='black', foreground='white')
+style.configure('TEntry', fieldbackground='black', foreground='white')
+style.configure('TButton', background='black', foreground='white')
 
-button_exit = tk.Button(root, text="Exit", command=exitProgram)
-button_exit.grid(row=6, column=3, padx=10, pady=10, sticky=tk.W)
+mainframe = ttk.Frame(root, padding="10 10 10 10")
+mainframe.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-button_download = tk.Button(root, text="Download", command=startDownload)
-button_download.grid(row=6, column=1, padx=10, pady=10, sticky=tk.E)
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
+mainframe.columnconfigure(1, weight=1)
+mainframe.rowconfigure(3, weight=1)
 
-button_stop = tk.Button(root, text="Stop", command=stopDownload)
-button_stop.grid(row=6, column=2, padx=10, pady=10, sticky=tk.E)
+ttk.Label(mainframe, text="Channel Link:").grid(row=0, column=0, sticky=tk.W, pady=5)
+entry_channel_link = ttk.Entry(mainframe, width=50)
+entry_channel_link.grid(row=0, column=1, padx=10, pady=5, sticky=(tk.W, tk.E))
 
-button_save = tk.Button(root, text="Save Config", command=saveConfig)
-button_save.grid(row=6, column=0, padx=10, pady=10, sticky=tk.W)
+ttk.Label(mainframe, text="Class Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
+entry_class_name = ttk.Entry(mainframe, width=50)
+entry_class_name.grid(row=1, column=1, padx=10, pady=5, sticky=(tk.W, tk.E))
+
+ttk.Label(mainframe, text="Number of Videos:").grid(row=2, column=0, sticky=tk.W, pady=5)
+entry_num_videos = ttk.Entry(mainframe, width=50)
+entry_num_videos.grid(row=2, column=1, padx=10, pady=5, sticky=(tk.W, tk.E))
+
+log_frame = ttk.Frame(mainframe)
+log_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+log_frame.columnconfigure(0, weight=1)
+log_frame.rowconfigure(0, weight=1)
+
+log_text = scrolledtext.ScrolledText(log_frame, height=20, width=80, state=tk.DISABLED, wrap=tk.WORD, background='black', foreground='white')
+log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+button_frame = ttk.Frame(mainframe)
+button_frame.grid(row=4, column=0, columnspan=2, pady=10, sticky=(tk.W, tk.E))
+
+button_download = ttk.Button(button_frame, text="Download", command=startDownload)
+button_download.grid(row=0, column=0, padx=10)
+
+button_stop = ttk.Button(button_frame, text="Stop", command=stopDownload)
+button_stop.grid(row=0, column=1, padx=10)
+
+button_save = ttk.Button(button_frame, text="Save Config", command=saveConfig)
+button_save.grid(row=0, column=2, padx=10)
+
+button_exit = ttk.Button(button_frame, text="Exit", command=exitProgram)
+button_exit.grid(row=0, column=3, padx=10)
+
+github_label = ttk.Label(button_frame, text="GitHub Project", foreground="cyan", cursor="hand2", background='black')
+github_label.grid(row=0, column=4, padx=10)
+github_label.bind("<Button-1>", open_github_link)
 
 loadConfig()
 root.mainloop()
