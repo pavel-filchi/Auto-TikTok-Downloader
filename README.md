@@ -32,10 +32,11 @@ A Python module for automatically downloading TikTok videos.
 
 1. Run your Python script.
 2. The videos from the specified TikTok channel should be downloaded to your local directory.
-### NEW : GUI Update
+
+### NEW : GUI Update + Dark mode + You can choose the number of videos to download !
 
 - You can now directly add your classname and the link of the tiktok channel directly to the app!:
-  ![App look](images/ex3.png)
+  ![App look](images/ex4.png)
 
 ## Example
 
