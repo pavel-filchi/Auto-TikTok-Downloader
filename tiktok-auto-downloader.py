@@ -179,7 +179,7 @@ def open_github_link(event):
 
 root = tk.Tk()
 root.title("TikTok Video Downloader")
-root.geometry("700x500")
+root.geometry("800x500")
 
 icon_path = 'logo.png'
 if os.path.exists(icon_path):
